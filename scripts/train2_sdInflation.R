@@ -53,6 +53,9 @@ runInflation <- function(nRun, plotSeasons, plotInflation, calcFactor){
     inflation <- resVec$stable[[3]]
     return(inflation)
   } else {
+    if(calcFactor){
+      print("Please update `args.R` with the mean combined inflation factor")
+    }
     return(print("Done"))
   }
 }
@@ -60,12 +63,17 @@ makePlots <- function(plotSeasons=FALSE, plotInflation=FALSE, calcFactor=FALSE){
   if(plotSeasons) fileAdd <- "seasonality"
   if(plotInflation) fileAdd <- "residualVec"
   
-  png(paste0("writings/paper1/figures/figXX_", fileAdd, ".png"), 
+  png(paste0("figures/figXX_", fileAdd, ".png"), 
       width=20, height=14, units="cm", res=350)
   layout(matrix(1:4, nrow=2))
   sapply(c(2,3), runInflation, plotSeasons, plotInflation, calcFactor=FALSE)
   dev.off()
 }
+
+# 0. Make plots showing seasonal variation for both NDVI and backscatter, and
+## seasonal variation in the residuals
+makePlots(plotSeasons=TRUE)
+makePlots(plotInflation=TRUE)
 
 ##----------------------------------------------------------------------------##
 # 1. Get seasonal variation in residuals for dynamic inflation factor by doy
@@ -73,10 +81,6 @@ makePlots <- function(plotSeasons=FALSE, plotInflation=FALSE, calcFactor=FALSE){
 ## visualization. Otherwise, the seasonal inflation adjustment (by doy) AND the
 ## monitoring inflation factor are based on the aggregated residuals 
 ## (standardized and twice-spike filtered)
-
-## plot seasonality or inflation vector
-makePlots(plotSeasons=TRUE)
-makePlots(plotInflation=TRUE)
 
 ## calculate inflation factor for dynamic inflation (ignore plots here)
 ### as a reminder, this is only calculated from stable period for this iteration
@@ -89,7 +93,7 @@ colnames(out) <- c("L8S2", "All")
 sapply(colnames(out), function(X){
   vec <- out[, get(X)]
   save(vec, file=
-         paste0("data/dataMyanmar/trainingPars/train2_seasonalAdjustment", X, 
+         paste0("data/trainingPars/train2_seasonalAdjustment", X, 
                 ".Rdata"))
   return(print("Saved"))
 })
@@ -104,15 +108,5 @@ sapply(colnames(out), function(X){
 ## STOP. HAVE YOU RUN SCRIPT 1 WITH dynamic INFLATION YET?
 runInflation(nRun=2, plotSeasons=FALSE, plotInflation=FALSE, calcFactor=TRUE)
 
-##----------------------------------------------------------------------------##
-## archive: try different windows
-layout(matrix(1:4, ncol=2, byrow=TRUE))
-inflationFactor(nodist, variance=FALSE, resDates=TRUE, ndvi=FALSE,
-                sensVec=c(1:3), windowVec=c(15,30,45,60), timeframe="monitor",
-                returnData=TRUE, dates=dates)
-
-layout(matrix(1:4, ncol=2))
-inflationFactor(nodist, variance=FALSE, resDates=FALSE, ndvi=TRUE,
-                sensVec=c(1:3), timeframe="monitor", returnData=TRUE, dates=dates)
 
 

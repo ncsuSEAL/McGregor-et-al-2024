@@ -36,7 +36,4 @@ returnStats <- FALSE      #return the model stats of each sensor's ts model
 saveStats <- FALSE        #save the model stats of each sensor's ts model?
 returnHarMod <- TRUE        #return harmonic models for each sensor?
 makeSumPlots <- TRUE      #retain information needed to make diagnostic plots?
-saveProbModel <- FALSE    #save the overall logistic model as a model object?
-probModelFile <- "data/trainingPars/probModel.RDS" 
-plotProbModel <- FALSE     #plot the logistic model after calculation
 pathPlanet <- "Z:/IanMcGregor/planetImagesNew/planetscope"

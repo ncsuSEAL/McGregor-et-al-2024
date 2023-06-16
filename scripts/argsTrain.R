@@ -5,7 +5,6 @@
 ## Last modified: May 2022
 ##########################################################
 ### primary run parameters -------------------------------------------------####
-longTime <- FALSE         # use data from L8 launch?
 weights <- c(28, 0.8)     #scaling facfor for ewmaType != "ewma"
 runType <- "train"
 
@@ -17,7 +16,7 @@ if(script==2){
 }
 
 ### folders and files ------------------------------------------------------####
-dataPath <- "data" #dataMyanmar, dataPeru, or dataSchenck
+dataPath <- "data"
 sensorFold <- "sensorData" # folder w/SR band data, each sensor is other table
 dataTrainPath <- "trainingPars/trainingDataPoints.csv" ## table of training data
 
@@ -48,14 +47,6 @@ sensorNames <- gsub(".csv", "", sensorFiles)
 
 names(bandList) <- sensorNames
 
-## Define dateRange ---
-if(longTime){
-  dateRange <- c(as.Date("2013-02-01"), as.Date("2020-01-31"))
-} else {
-  dateRange <- c(as.Date("2015-06-23"), as.Date("2020-01-31"))
-}
-
+# define date range
+dateRange <- c(as.Date("2015-06-23"), as.Date("2020-01-31"))
 dates <- as.numeric(seq(dateRange[1], dateRange[2], by=1))
-
-## Combine L8 and L9 if using Schenck (and haven't done so already)
-# if(grepl("Schenck", dataPath)) combineLandsat(dataPath)

@@ -185,7 +185,7 @@ plotLagSensor <- function(X, medAll, quantLow, quantHigh, windowType, bayes){
     ylabAdd <- "observations"
   } else {
     # if(bayes) ylim <- c(0,50) else ylim <- c(0,20)
-    ylim <- c(0,15)
+    if(bayes) ylim <- c(0,20) else ylim <- c(0,15)
     ylabAdd <- "days"
   }
   

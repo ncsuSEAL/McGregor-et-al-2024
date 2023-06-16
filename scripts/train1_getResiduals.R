@@ -129,12 +129,4 @@ runSensCombo <- function(nRun, funs, inflationType){
 ## Use "static" inflation if haven't run train2_sdinflation.R
 ## After, use "dynamic" inflation. It's ok to have spike2=TRUE both times bc
 ## its result is not used in the inflation seasonality calculation
-sapply(2:3, runSensCombo, funs, inflationType="static")
-
-## If want to submit 3 separate jobs on HPC (faster), use this:
-# args <- commandArgs(trailingOnly=TRUE)
-# # test if there is at least one argument: if not, return an error
-# if (length(args)==0) {
-#   stop("At least one argument must be supplied (input file).n", call.=FALSE)
-# }
-# runSensCombo(nRun=args[1], funs=ls())
+sapply(2:3, runSensCombo, funs, inflationType="dynamic")
