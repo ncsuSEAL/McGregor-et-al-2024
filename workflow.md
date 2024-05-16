@@ -12,7 +12,7 @@ Figure # | Script
 2 | draw.io
 3 | `data10_altApps.R`
 4 | `train6_accuracy.R`
-5 | `train7_plotAccuracy.R`
+5 | `train7_plotOthers.R`
 6 | `train7_plotAccuracy.R`
 7 | `paper1_metadata.R`
 8 | `SEAL/app3_dailyProbMaps.R`
@@ -23,9 +23,10 @@ S3 | `train2_sdInflation.R`
 S4 | `train10_plotDiagnostics.R`
 S5 | `train7_plotAccuracy.R`
 S6 | `train7_plotAccuracy.R`
-S7 | `train7_plotAccuracy.R`
+S7 | `train7_plotOthers.R`
 S8 | `train8_crossVal.R`
 S9 | `train10_plotDiagnostics.R`
+S10| `monitoringFigureCh1.R`
 
 Step #|Task|Medium|Script|Output
 ---|---|---|---|---|
@@ -36,7 +37,7 @@ Step #|Task|Medium|Script|Output
 3|Download satellite data by uploading the csv to GEE |GEE| `GEE/data2_getImagery.js` | csv files with band data per training point for the sensors
 | | | | |
 ||**Step 2: Process S2 using Sen2Cor**|
-1|Don't need to do this if GEE has full S2 ts. Please read `github/hpcHelp/Sen2Cor_HPC/howToGuide.md` and `hpc/IanMcGregor/S2_0workflow.R` for context|
+1|Don't need to do this if GEE has full S2 ts|
 2|Determine which S2 tiles to use | Either | `scripts/data3_s2TilesL1C.R` | csv of tiles by point (`trainingDataS2Tiles.csv`)
 3|Download S2 images | PC VScode | `scripts/data3_s2TilesL1C.R` | S2 images for training data
 4|Merge S2 DEMs | PC VScode | `scripts/data4_mergeS2DEMs.ipynb` | large DEM over northern Myanmar
@@ -45,7 +46,7 @@ Step #|Task|Medium|Script|Output
 7|Check progress of sen2cor |PC| `SEAL/Ian/sen2cor_rmpi/data7_trackSen2CorProgress.R` | analysis
 7b|Calc NDVI and delete L1C if this didn't happen within the sen2cor script | HPC | `SEAL/Ian/scripts/ch1_ndviL2A.R`; `SEAL/Ian/ch1_ndviL2A.csh` | L2A tifs
 8|Extract data from L2A images and put in same format as downloaded GEE data | HPC job | `SEAL/Ian/data8_extractS2Bands.csh`; `scripts/data8_extractS2Bands.R`; `scripts/funs/dataA_extractS2.R` |csv
-9|Identify forest strata covered by training data | PC | `scripts/data9_forestType.R` + `funs/dataB_maskForest.R` | cropped tif of strata
+9|Identify forest strata covered by focal locations | PC | `scripts/data9_forestType.R` + `funs/dataB_maskForest.R` | cropped tif of strata
 10|Identify other regions for landscape application | Either | `scripts/data10_altApps.R` + `funs/dataC_idRegions.R` | Rdata file of extents
 | | | | |
 ||**Step 3: Training Exploratory: Compare different sensor combinations for training data**|
@@ -58,7 +59,7 @@ Step #|Task|Medium|Script|Output
 6|Calculate ewma, logMod, and probs for a vector of possible lambdas | Either | `scripts/train4_runLambdas.R` | csv files (separate for each lambda)
 7|Prep accuracy metrics for using a sensitivity analysis over all thresholds| Either | `scripts/train5_metricsThresholds.R` | csv file
 8|Calculate overall accuracy metrics and plot comparison panels| Either | `scripts/train6_accuracy.R` | csv files
-9|Choose a threshold based on output from Step 8 and re-run Step 7 using that singular threshold. | | |
+9|Choose a threshold based on output from Step 8 and re-run Step 7 using that singular threshold. | |`scripts/train5_metricsThresholds.R` |
 10|Plot results from Step 9 to visualize F1, PR, and lag differences btwn lambdas and sensors | Either | `scripts/train7_plotAccuracy.R` | plots
 11|Choose the best lambda and sensor combination for landscape application based on output of Step 10|
 12|Run k-fold cross-validation for chosen sensor combo and chosen lambda. | Either | `scripts/train8_crossVal.R` | plots
