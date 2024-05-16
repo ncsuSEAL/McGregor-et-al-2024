@@ -5,6 +5,7 @@
 ## Last modified: May 2022
 ##########################################################
 ### primary run parameters -------------------------------------------------####
+longTime <- FALSE         # use data from L8 launch?
 weights <- c(28, 0.8)     #scaling facfor for ewmaType != "ewma"
 runType <- "train"
 
@@ -16,7 +17,7 @@ if(script==2){
 }
 
 ### folders and files ------------------------------------------------------####
-dataPath <- "data"
+dataPath <- "data/"
 sensorFold <- "sensorData" # folder w/SR band data, each sensor is other table
 dataTrainPath <- "trainingPars/trainingDataPoints.csv" ## table of training data
 
@@ -38,15 +39,22 @@ base <- base[, `:=` (dateDist = as.Date(dateDist, format="%d/%m/%Y"),
                      datePre = as.Date(datePre, format="%d/%m/%Y"))]
 pointids <- sort(unique(base[,pointid]))
 
-## Format bandlist and sensor data ---
-bandList <- bandList[grepl(gsub(", ", "|", sensKeep), names(bandList))]
-sensorFiles <- list.files(file.path(dataPath, sensorFold))
-sensorFiles <- sensorFiles[grepl(paste0(names(bandList), collapse="|"), 
-                                 sensorFiles)]
-sensorNames <- gsub(".csv", "", sensorFiles)
+if(script != 3){
+  ## Format bandlist and sensor data ---
+  bandList <- bandList[grepl(gsub(", ", "|", sensKeep), names(bandList))]
+  sensorFiles <- list.files(file.path(dataPath, sensorFold))
+  sensorFiles <- sensorFiles[grepl(paste0(names(bandList), collapse="|"), 
+                                  sensorFiles)]
+  sensorNames <- gsub(".csv", "", sensorFiles)
 
-names(bandList) <- sensorNames
+  names(bandList) <- sensorNames
 
-# define date range
-dateRange <- c(as.Date("2015-06-23"), as.Date("2020-01-31"))
-dates <- as.numeric(seq(dateRange[1], dateRange[2], by=1))
+  ## Define dateRange ---
+  if(longTime){
+    dateRange <- c(as.Date("2013-02-01"), as.Date("2020-01-31"))
+  } else {
+    dateRange <- c(as.Date("2015-06-23"), as.Date("2020-01-31"))
+  }
+
+  dates <- as.numeric(seq(dateRange[1], dateRange[2], by=1))
+}

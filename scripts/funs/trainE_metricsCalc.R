@@ -85,7 +85,7 @@ f1VecBySize <- function(Y, tpDT, fpDT, colN){
   return(valDT)
 }
 f1ByLambda <- function(l, subDT, sens, plotWindow, size){
-  subDT <- subDT[lambda==round(l, 2), ]
+  subDT <- subDT[as.character(lambda)==as.character(l), ]
   
   tpDT <- subDT[!grepl("a", point), ]
   fpDT <- subDT[grepl("a", point), ]

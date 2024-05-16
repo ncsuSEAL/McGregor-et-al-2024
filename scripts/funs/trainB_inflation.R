@@ -183,7 +183,7 @@ calcPlotRollMean <- function(X, s, subDT, mainAdd, returnData, timeframe){
   
   plotTab <- rollM[(X+1):nrow(rollM)][, doy := doy-X]
   plot(plotTab$doy, plotTab$std, xlab="", ylab=ylab, xaxt=xaxt, yaxt=yaxt,
-       main=main, xlim=c(1,365), ylim=c(0.45,2))
+       main=main, xlim=c(1,365), ylim=c(0.45,2.75))
   abline(h=1, lty=2, col="red")
   
   if(timeframe=="monitor") mtext("Day of year", side=1, line=2, cex=0.8)
@@ -214,25 +214,36 @@ calcPlotRollMean <- function(X, s, subDT, mainAdd, returnData, timeframe){
 }
 boxNDVI <- function(subDT, mainAdd, s, timeframe){
   mainAdd <- ifelse(s==3, "SAR", "Optical")
+  
+  if(s==2 & timeframe=="stable")  par(mar=c(1.5,3.5,4,1))
+  if(s==2 & timeframe=="monitor") par(mar=c(3.5,3.5,1,1))
+  if(s==3 & timeframe=="stable")  par(mar=c(1.5,3,4,1))
+  if(s==3 & timeframe=="monitor") par(mar=c(3.5,3,1,1))
     
   if(s==3){
-    if(timeframe=="monitor") main <- "" else main <- mainAdd
-    
     s1 <- subDT[grepl("sentinel1", sensor)]
     fullDT <- addMissingDays(s1, mainAdd)
     fullDT[, weekN := week(as.Date("2018-12-31")+doy)
     ][, weekN := ifelse(weekN > 52, 52, weekN)]
-    boxplot(val ~ sensor + weekN, data=fullDT, ylab="", xlab="",
-            main=main, outline=FALSE, col=c("grey", "violet"), xaxt="n",
-            ylim=c(-20, -5))
-    axis(1, at=seq(1.5, 103.5, by=2), labels=seq(1:52))
-    mtext("Backscatter", side=2, line=2.5, cex=0.8)
     
-    if(timeframe=="monitor"){
-      legend("topright", legend=c("ASC", "DES"), col=c("grey", "violet"), 
-             bty="n", pch=16)
-      mtext("Week", side=1, line=2.5, cex=0.8)
-    }
+    sapply(c("Ascending", "Descending"), function(orbit){
+      mainAdd <- paste0(mainAdd, ": ", orbit)
+      if(timeframe=="monitor") main <- "" else main <- mainAdd
+      
+      if(orbit=="Ascending"){
+        plotDT <- fullDT[sensor=="sentinel1ASC"]
+        col <- scales::alpha(viridis::viridis(4)[2], 0.4)
+      } else {
+        plotDT <- fullDT[sensor=="sentinel1DES"]
+        col <- scales::alpha(viridis::viridis(4)[1], 0.4)
+      }
+      
+      boxplot(val ~ sensor + weekN, data=plotDT, ylab="", xlab="",
+              main=main, outline=FALSE, xaxt="n", ylim=c(-20, -5),
+              col=col)
+      axis(1, at=seq(1.5, 103.5, by=2), labels=seq(1:52))
+      mtext("Backscatter", side=2, line=2.5, cex=0.8)
+    })
     
   } else {
     if(timeframe=="monitor") main <- "" else main <- mainAdd
@@ -240,7 +251,8 @@ boxNDVI <- function(subDT, mainAdd, s, timeframe){
     fullDT[, weekN := week(as.Date("2018-12-31")+doy)
     ][, weekN := ifelse(weekN > 52, 52, weekN)]
     boxplot(val ~ weekN, data=fullDT, ylab="", xlab="",
-            main=main, outline=FALSE, ylim=c(0,1))
+            main=main, outline=FALSE, ylim=c(0,1),
+            col=scales::alpha("yellowgreen", 0.4))
     mtext("NDVI", side=2, line=2.5, cex=0.8)
     
     if(timeframe=="monitor") mtext("Week", side=1, line=2.5, cex=0.8)
@@ -260,8 +272,6 @@ applySensor <- function(s, dt, windowVec=NULL, analyzeRes=FALSE,
     mainAdd <- paste0("Multi-source optical")
   }
   
-  if(analyzeNDVI & timeframe=="stable")  par(mar=c(2,4,4,1))
-  if(analyzeNDVI & timeframe=="monitor") par(mar=c(4,4,2,1))
   if(analyzeRes  & timeframe=="stable")  par(mar=c(2,4,4,1))
   if(analyzeRes  & timeframe=="monitor") par(mar=c(4,4,2,1))
   
@@ -310,7 +320,9 @@ inflationFactor <- function(dat, variance, resDates, ndvi, sensVec=NULL,
     # xlab <- "Factor difference monitor:stable"
     # hist(dt$stdRes, breaks=50, xlab=xlab, main="Factor diff")
     
-    return(print(c(paste0("Mean combined inflation factor = ", comb))))
+    return(print(c(paste0("Mean combined inflation factor = ", comb, ". This ",
+                          "value should match the variable `staticInflation` ",
+                          "in the file `args.R`."))))
   }
   
   # Look at seasonality of raw residuals by day of year

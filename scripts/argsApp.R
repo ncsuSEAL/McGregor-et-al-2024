@@ -31,7 +31,7 @@ matRuns$endR <-  matRuns$startR + matRuns$nR-1
 # baseDir="/Volumes/SEAL/IanMcGregor/"
 
 ## define folder locations and load specific Rdata for application region
-saveDir <- "data/"
+saveDir <- "dissertation/data/myanmar/"
 saveSensorTSDir <- paste0(saveDir, "landscape/")
 
 load(paste0(saveDir, "appLocations.Rdata"))

@@ -3,14 +3,12 @@
 ## Run medium:
 ##  - Mac or PC
 ##
-## Figures for McGregor et al 2023: None
-##
 ## Creator: Ian McGregor, imcgreg@ncsu.edu
 ## System: R Version 4.1.1, April 2023
-## Last modified: Apr 2023
 ##########################################################
-library(data.table)
-library(ggplot2)
+groundhog.library(data.table, groundhogDate)
+groundhog.library(ggplot2, groundhogDate)
+
 script <- 3
 path <- "data/trainingPars/"
 fileLoc <- "train5_S_allMetricsThresholds_conObs1_days.csv"
@@ -19,15 +17,13 @@ source("scripts/funs/trainE_metricsCalc.R")
 source("scripts/args.R")
 source("scripts/argsTrain.R", local=TRUE) #error is fine, ignore it
 
-## create and save metrics (only need to do once)
-### type = bayes or normal
+## create and save metrics
 processMetrics(path, type="normal", fileLoc, lambdaPlot=l, window)
 
-################################################################################
+#######################################################################
 # Chapter 1, Fig 4 - how F1 scores + lags change with lambda, sensors, threshold
-library(ggpubr)
-library(viridis)
-plotMetrics <- function(type, consecObs, windowType){
+
+plotMetrics <- function(type, consecObs, windowType, savePlot){
   pal <- colorRampPalette(colors = 
                             c("purple", "blue", "red", "orange", "#996633"))(10)
   for(i in c("f1", "lags")){
@@ -99,11 +95,24 @@ plotMetrics <- function(type, consecObs, windowType){
   g <- ggarrange(gF1, gLagF, gLagS, labels=c("a", "b", "c"), common.legend=TRUE,
                  legend="right", nrow=3)
   
-  fileOut <- "figures/figXX_thresholds.png"
+  fileOut <- "writings/paperN/figures/figXX_thresholds.tiff"
+  if(type=="normal"){
+    fileOut <- gsub("N", "1", fileOut)
+  } else if(type=="bayes"){
+    fileOut <- gsub("N", "2", fileOut)
+  }
   
-  png(fileOut, width=20, height=18, units="cm", res=350)
-  print(g)
-  dev.off()
+  if(savePlot){
+    tiff(fileOut, width=20, height=18, units="cm", res=350, compression="lzw")
+    print(g)
+    dev.off()
+  } else {
+    print(g)
+  }
 }
-type <- c("normal", "bayes")
-plotMetrics(type="normal", consecObs=1, windowType)
+
+if(makePlots){
+  groundhog.library(ggpubr, groundhogDate)
+  groundhog.library(viridis, groundhogDate)
+  plotMetrics(type="normal", consecObs=1, windowType, savePlot=FALSE)
+}

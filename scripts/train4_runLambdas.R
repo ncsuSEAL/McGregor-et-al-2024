@@ -10,9 +10,9 @@
 ## System: R Version 4.1.1, May 2022
 ## Last modified: Feb 2023
 ##########################################################
-library(data.table)
-library(parallel)
-library(MuMIn)
+groundhog.library(data.table, groundhogDate)
+groundhog.library(parallel, groundhogDate)
+groundhog.library(MuMIn, groundhogDate)
 
 source("scripts/funs/trainC_byLambda.R")
 source("scripts/funs/commonD_ewmaBinaryCat.R")
@@ -20,22 +20,19 @@ source("scripts/funs/commonF_probBayes.R")
 funs <- ls()
 
 ##----------------------------------------------------------------------------##
-# Step 1: Run over everything to move on to train5.
+# Step 2: Run over everything to move on to train5.
 ## Run on Mac or PC
-
-## This creates a csv per lambda with zEWMA and probs
+## This creates a csv per lambda with zEWMA, probs, and probsBayes. Because it
+### includes everything, **bayes should always be set to TRUE here**.
 ### ALSO - saved file does not matter if windowType=obs or days (args.R) 
 ### because they are handled separately in train5
 modStats <- sapply(c(2:3), runCombos, funs=funs, bayes=FALSE, probType="total")
 
 ## Run in HPC
-runSensCombo(nRun=args[1], funs=funs, returnOnlyMod=FALSE)
+# args <- commandArgs(trailingOnly=TRUE)
+# # test if there is at least one argument: if not, return an error
+# if (length(args)==0) {
+#   stop("At least one argument must be supplied (input file).n", call.=FALSE)
+# }
 
-##----------------------------------------------------------------------------##
-## Archive: Run function only for L8S2 and All for each specific window.
-## NOTE - this is only for a sensitivity analysis looking over different
-## monitoring windows.
-modStats <- rbindlist(lapply(2:3, runCombos, funs=funs, consecObs=1, 
-                             returnOnlyMod=TRUE, bayes=FALSE, 
-                             probType="log", returnOnlyMetrics=FALSE))
-fwrite(modStats, paste0("data/dataMyanmar/logModStats", window, "days.csv"))
+# runSensCombo(nRun=args[1], funs=funs, returnOnlyMod=FALSE)

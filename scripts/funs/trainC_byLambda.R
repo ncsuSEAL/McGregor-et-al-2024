@@ -143,18 +143,10 @@ runCombos <- function(nRun, funs, returnOnlyMod, bayes, probType,
     saveAdd <- paste0("_", probType)
   }
   
-  ## test for normality (evidence against using pnorm)
-  ## returned item here is vector of those points whose distribution of ewma
-  ## values is considered to be normal.
-  # h <- lapply(l, testNormal)
-  
-  # define save location and file name
-  folderPath <- "data/trainingPars/train4_fullZewmaProbs"
-  if(!dir.exists(folderPath)) dir.create(folderPath)
-  
   fileSaveLoc <- gsub("train1", "train4", fileLoadLoc)
   saveFile <- paste0(gsub("train4", "train4_fullZewmaProbs/train4", 
                           fileSaveLoc), "_N.csv")
+  if(!dir.exists(dirname(saveFile))) dir.create(dirname(saveFile))
   
   ## run the main code
   cl <- makeCluster(detectCores()-1)

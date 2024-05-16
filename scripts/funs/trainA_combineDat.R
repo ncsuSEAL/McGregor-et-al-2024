@@ -15,7 +15,8 @@
 ## combineLandsat = combine L8 and L9 data for Schenck
 ## -----------------------------------------------------------------------------
 combineLandsat <- function(dataPath){
-  f <- list.files(file.path(dataPath, "sensorData"), pattern="landsat", full.names=TRUE)
+  f <- list.files(file.path(dataPath, "sensorData"), pattern="landsat", 
+                  full.names=TRUE)
   dt <- rbindlist(lapply(f, function(X) fread(X)))
   dt <- dt[order(pointid, date), ]
   fwrite(dt, file.path(dataPath, "sensorData", "landsat8sr.csv"))
@@ -23,10 +24,11 @@ combineLandsat <- function(dataPath){
 expandValues <- function(dt, col, dates){
   
   # Get a full time series and match the dates to the actual observation dates
-  ## If duplicate dates, retain only the mean of each band. We're doing this because
-  ### the differences between dup obs per sensor per day are solely due to a difference
-  ### in reprojection over different tiles, so the values should be consistent.
-  ### Also because otherwise we'd have to retain date vectors from every single pixel.
+  ## If duplicate dates, retain only the mean of each band. We're doing this 
+  ### because the differences between dup obs per sensor per day are solely due 
+  ### to a difference in reprojection over different tiles, so the values 
+  ### should be consistent. Also because otherwise we'd have to retain date 
+  ### vectors from every single pixel.
   #### This is primarily for Sentinel-2.
   
   dt <- dt[, .(date, get(col))]
