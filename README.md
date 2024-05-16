@@ -1,5 +1,5 @@
 # How to navigate this repo
-This repository contains the scripts and workflow used for McGregor et al. 2024. I have verified that the initial analysis runs without issue, and the landscape analysis *should* run similarly, but that has not been tested (or altered) for a while. Please feel free to open an issue if something pops up.
+This repository contains the scripts and workflow used for [McGregor et al. 2024](https://www.sciencedirect.com/science/article/pii/S003442572400213X?via%3Dihub). I have verified that the initial analysis runs without issue, and the landscape analysis *should* run similarly, but that has not been tested (or altered) for a while. Please feel free to open an issue if something pops up.
 
 ## Analysis
 The step-by-step workflow for how the scripts should be run is in `workflow.md`. There are 2 steps to the analysis:
