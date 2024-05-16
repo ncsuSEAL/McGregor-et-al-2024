@@ -6,12 +6,11 @@
 ##  - PC VScode terminal (faster than Mac vscode bc already connected to SEAL)
 ## Creator: Ian McGregor, imcgreg@ncsu.edu
 ## System: R Version 4.1.1, May 2022
-## Last modified: July 2022
 ##########################################################
 
-# Before running the code, we need to first activate conda, and we will open
-## radian. Note that later on in the script we will need to get out of radian,
-## but this is explained below.
+# Before running the code, we need to first activate conda in a new terminal, 
+## and we will open radian. Note that later on in the script we will need to 
+## get out of radian, but this is explained below.
 
 ## If you need assistance with this, please see the github page:
 ## https://github.com/tyson-swetnam/porder
@@ -19,9 +18,11 @@
 # conda activate planet_orders
 # radian
 
-library(data.table)
-library(terra)
-library(parallel)
+library(groundhog)
+groundhogDate <- "2023-07-31"
+groundhog.library(data.table, groundhogDate)
+groundhog.library(terra, groundhogDate)
+groundhog.library(parallel)
 
 ################################################################################
 # Step 1a: Define variables

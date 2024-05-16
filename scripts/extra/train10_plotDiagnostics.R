@@ -6,10 +6,14 @@
 ##  - Mac
 ## Creator: Ian McGregor, imcgreg@ncsu.edu
 ## System: R Version 4.1.1, Nov 2021
-## Last modified: Jan 2023
 ##########################################################
-library(data.table)
-library(terra)
+library(groundhog)
+groundhogDate <- "2023-07-31"
+groundhog.library(data.table, groundhogDate)
+groundhog.library(terra, groundhogDate)
+groundhog.library(parallel)
+groundhog.library(ggplot, groundhogDate)
+groundhog.library(scales, groundhogDate) #for histogram of disturbance dates
 
 # NOTE
 ## In order to run this successfully, you MUST have run script 
@@ -26,7 +30,7 @@ source("scripts/funs/trainC_byLambda.R")
 source("scripts/funs/commonD_ewmaBinaryCat.R")
 source("scripts/funs/commonE_plotSummaries.R")
 source("scripts/funs/commonF_probBayes.R")
-load("data/dataMyanmar/trainingPars/train1_L8S2.Rdata")
+load("data/trainingPars/train1_L8S2.Rdata")
 
 lambdaVec <- c(0.1, 0.5, 1) # which lambdas do we want to plot?
 
@@ -39,10 +43,6 @@ allProbs <- cbind(base[, .(pointid)],
 
 ##--------------------------------------------##
 # Actually run the plotting code
-## NB if logMod is NULL, then a new logistic model is fit for each lambda of
-## lambdaVec. Otherwise, if logMod is supplied, then each lambda of lambdaVec is
-## predicted using that one model.
-### Because of this, logMod=NULL makes the plotting code take a bit longer.
 
 ## if planet=TRUE, then pathPlanet is set in `args.R`
 
@@ -69,24 +69,29 @@ breakpoints <- sapply(1:12, function(X){
   return(as.Date(paste0("2019-", X, "-01")))
 })
 
-png("writings/paper1/figures/figXX_distByMonth.png", width=20, height=16,
+png("figures/figXX_distByMonth.png", width=20, height=16,
     units="cm", res=350)
 par(mar=c(5,4,2,1))
 hist(base[!grepl("a", pointids), dateDist], freq=FALSE,
      breaks=c(as.Date(breakpoints, origin=as.Date("1970-01-01")), 
               as.Date("2020-01-01")),
+     col=c(alpha("orange", 0.4), 
+           rep(alpha("blue", 0.4), 4), 
+           rep(alpha("purple", 0.4), 4), 
+           rep(alpha("orange", 0.4), 3)),
      xlab="Month from Jan 2019 - Jan 2020", main=""
      # main="Distribution of disturbances by month"
-     )
+)
+legend("topright", legend=c("Cool dry season", "Hot dry season", "Wet season"),
+       col=c(alpha("orange", 0.4), alpha("blue", 0.4), alpha("purple", 0.4)),
+       pch=15, bty="n", pt.cex=2)
 dev.off()
 par(mar=c(5,4,4,2) + 0.1)
 ###############################################################################
 # Met data
 ## Plot met data from GEE to support evidence of having a short stable period
-library(data.table)
-
 # precip, pdsi, soil moisture, water deficit
-plotMet <- function(m, metDT, metVars, mets, units){
+plotMet <- function(m, metDT, metVars, mets, units, labs, labsY){
   # note that mean doesn't actually do anything here, but gets us the 3 columns
   ## we need
   test <- metDT[, mean(get(metVars[m])), by=.(date, region)]
@@ -131,10 +136,11 @@ plotMet <- function(m, metDT, metVars, mets, units){
     lines(dtSub$date, dtSub[, get(metVars[m])], col=col, lty=lty)
   })
   abline(v=as.Date("2019-01-01"), lty=2)
+  text(as.Date("2019-12-01"), labsY[m], labels=labs[m], cex=2)
 }
 
 metDT <- rbindlist(lapply(c(1,5), function(r){
-  dt <- fread(paste0("data/dataMyanmar/sensorData/metData/metDataRegion",
+  dt <- fread(paste0("data/sensorData/metData/metDataRegion",
                         r, ".csv"))
   dt[, `:=` (grp = gsub("[[:digit:]]*_", "", `system:index`),
                 date = as.Date(date, format="%m/%d/%Y"),
@@ -142,10 +148,12 @@ metDT <- rbindlist(lapply(c(1,5), function(r){
   return(dt)
 }))
 
-png("writings/paper1/figures/figXX_metData.png", width=16, height=12, res=350,
+png("figures/figXX_metData.png", width=16, height=12, res=350,
     units="cm")
 layout(matrix(1:4, ncol=2))
 metVars <- c("pdsi", "pr", "soil", "def")
+labs <- c("a", "c", "b", "d")
+labsY <- c(275, 440, 2950, 1175)
 units <- c("", "mm", "mm", "mm")
 mets <- c("PDSI", "Precipitation", "Soil moisture", "Water deficit")
 sapply(1:length(metVars), function(m){
@@ -155,7 +163,7 @@ sapply(1:length(metVars), function(m){
     par(mar=c(3,3,1,1))
   }
   
-  plotMet(m, metDT, metVars, mets, units)
+  plotMet(m, metDT, metVars, mets, units, labs, labsY)
 })
 dev.off()
 
@@ -192,12 +200,12 @@ axis(4, at=seq(0, ylim[2], by=40), labels=seq(0, 1, length.out=6), col="red",
 mtext("Cumulative % of training data", side = 4, line = 3, col="red")
 
 ###############################################################################
-# Chapter 1, Figure SX
+# Chapter 1, Figure S4
 ## Distribution of dist and undist zEWMA values by sample lambda
 lam <- c(0.05, 0.5, 1)
 cols <- c("purple", "#00CCFF", "#339900")
 
-png("writings/paper1/figures/figXX_distributions.png", width=20, height=14,
+png("figures/figXX_distributions.png", width=20, height=14,
     res=350, units="cm")
 layout(matrix(1:2, ncol=2))
 for(q in c("L8S2", "All")){
@@ -213,7 +221,8 @@ for(q in c("L8S2", "All")){
     main <- "Multi-source optical"
   }
   
-  plot(NA, xlim=c(-41, 28), ylim=c(0, 2.3), xlab="zEWMA", yaxt=yaxt,
+  # xlim <- c(-41, 28)
+  plot(NA, xlim=c(-20, 5), ylim=c(0, 2.3), xlab="zEWMA", yaxt=yaxt,
        ylab=ylab, main=main)
   
   if(q=="All"){
@@ -225,9 +234,8 @@ for(q in c("L8S2", "All")){
   }
   
   sapply(1:length(lam), function(X){
-    path <- "data/dataMyanmar/trainingPars/train4_fullZewmaProbs/"
-    dt <- fread(paste0(path, "train4_", q, "_conObs1_days_", 
-                       lam[X]*100, ".csv"))
+    path <- "data/trainingPars/train4_fullZewmaProbs/"
+    dt <- fread(paste0(path, "train4_", q, "_", lam[X]*100, ".csv"))
     nodist <- rbind(dt[grepl("a", pointid)], 
                     dt[!grepl("a", pointid) & dist==0])
     dist <- dt[dist==1 & !grepl("a", pointid)]
@@ -254,12 +262,102 @@ plot(density(test[grepl("a", pointid), maxZ]), col="blue", ylim=c(0,1),
 lines(density(test[!grepl("a", pointid), maxZ]))
 legend("topright", legend=c("disturbed", "undisturbed"), col=c("black", "blue"),
        lty=1, bty="n")
+###############################################################################
+# Plots showing number of observations by sensor, and per date
+## (aggregated over all the training data)
+
+fileNames <- c("S1", "L8S2", "All")
+numRun <- 3
+
+dataPath <- "data/"
+fileLoadLoc <- paste0(dataPath, "/trainingPars/train1_", fileNames[numRun])
+load(paste0(fileLoadLoc, ".Rdata"))
+
+allDates <- lapply(names(oneTS), function(X){
+  pt <- oneTS[[X]]$stdRes
+  out <- rbindlist(lapply(names(pt), function(s){
+    return(data.table(date=pt[[s]]$obsDates, sensor=s))
+  }))
+  out[, pt := X]
+})
+allDates <- rbindlist(allDates)
+
+## remove those which had very low numbers, since models weren't fit to them
+lose <- c(which(allDates$sensor=="sentinel1DES" & allDates$pt=="g0p0_8a"),
+          which(allDates$sensor=="sentinel1ASC" & allDates$pt=="g10p0_68a"))
+allDates <- allDates[-lose, ]
+
+# Consolidate the data for plots
+bl <- allDates[, .N, by=.(date, sensor)]
+
+## add qualifiers
+bl[, `:=` (dateQ = as.Date(date, origin=as.Date("1970-01-01")),
+           nq = round(N/630, 2))]
+bl[, sensorNew := ifelse(sensor=="landsat8sr", "Landsat-8",
+                         ifelse(sensor=="sentinel2l2a", "Sentinel-2",
+                                ifelse(sensor=="sentinel1ASC", 
+                                       "Sentinel-1 Asc",
+                                       "Sentinel-1 Des")))]
+bl[, sensorNew := factor(sensorNew, levels=c("Sentinel-1 Des", "Sentinel-1 Asc",
+                                             "Sentinel-2", "Landsat-8"))]
+bl <- bl[order(sensorNew)]
+
+# Boxplot of number of observations per sensor (full timeframe)
+modStart <- as.numeric(as.Date("2019-01-01"))
+
+## pars
+cols <- viridis::viridis(4)
+dateAx <- c(as.Date("2016-01-01"), as.Date("2017-01-01"), 
+            as.Date("2018-01-01"), as.Date("2019-01-01"), 
+            as.Date("2020-01-01"))
+
+png("figures/figXX_sensorObsN.png", width=14, height=18,
+    units="cm", res=350)
+par(mar=c(4,2,2,1))
+boxplot(N ~ sensorNew, data=bl, xlab="Number of observations", ylim=c(0,360),
+        ylab="", horizontal=TRUE, col=alpha(cols, 0.8), boxwex=0.5)
+dev.off()
+
+# Now get the dates representing the median number of observations
+png("figures/figXX_sensorObsTime.png", width=20, height=14,
+    units="cm", res=350)
+par(mar=c(4,2,2,1))
+plot(NA, ylim=c(1,4), xlim=c(as.Date("2015-06-15"), as.Date("2020-01-31")),
+     xlab="", yaxt="n", xaxt="n", ylab="")
+axis(1, at=dateAx, labels=c("2016", "2017", "2018", "2019", "2020"))
+
+sens <- unique(bl$sensorNew)
+sapply(1:length(sens), function(X){
+  most <- bl[sensorNew==sens[X] & N >= 100]
+  points(most$dateQ, rep(X, nrow(most)), pch=15, cex=0.8, col=cols[X])
+})
+
+axis(2, at=c(1,2,3,4), labels=sens, las=0)
+dev.off()
+
+## number of points that had observation for each sensor over time
+bl[, col := ifelse(sensor=="landsat8sr", cols[4],
+                   ifelse(sensor=="sentinel2l2a", cols[3],
+                          ifelse(sensor=="sentinel1ASC", cols[2], cols[1])))]
+bl[, sensorNew := factor(sensorNew, levels=rev(levels(sensorNew)))]
+g <- ggplot(bl, aes(x=date, y=nq, color=sensorNew)) +
+  geom_bar(stat="identity") + 
+  ylim(0,0.6) +
+  scale_color_manual(values=rev(cols), guide="none") +
+  xlab("") +
+  ylab("Number of points that had observation post-filtering (%)") +
+  scale_x_continuous(breaks=as.numeric(dateAx), 
+                     labels=c("2016", "2017", "2018", "2019", "2020")) +
+  theme_minimal() +
+  facet_wrap(~sensorNew, ncol=1)
+
+png("figures/figXX_sensorObsTimeAll.png", width=18, height=18,
+    units="cm", res=350)
+print(g)
+dev.off()
 
 ###############################################################################
 # Density of FP and TP for each lambda by ewma value
-library(data.table)
-library(parallel)
-
 layout(matrix(1:1))
 source("scripts/funs/trainC_byLambda.R")
 source("scripts/funs/commonD_ewmaBinaryCat.R")
@@ -388,60 +486,3 @@ visDens <- function(l){
 
 visDens(l)
 layout(matrix(1:1))
-
-##############################################################################
-# plot FPR per probability for EDFM poster
-dens1 <- lapply(l, parseVals, probsList=probsAll1, iter="vals")
-dens3 <- lapply(l, parseVals, probsList=probsAll3, iter="vals")
-
-cols <- c("white", "#CC9900") # c("black", "red")
-par(bg="black")
-plot(NULL, xlim=c(0.1,1), ylim=c(0,0.1), xlab="Lambda", 
-     ylab=c("False Positive Rate"),
-     col.lab = "white", col.main = "white", col.axis="white", fg="white",
-)
-legend("topleft", legend=c("1 observation", "3 observations"), 
-       col=cols, pch=16, bty="n",
-       text.col="white"
-)
-sapply(c(1,3), function(obsNum){
-  if(obsNum==1){
-    dat <- dens1
-    col <- cols[1]
-  } else {
-    dat <- dens3
-    col <- cols[2]
-  }
-  vals <- sapply(1:length(dat), function(X){
-    subL <- dat[[X]]$nodist
-    fp <- ifelse(subL >= 0.5, 1, 0)
-    fpr <- sum(fp==1)/length(fp)
-    return(fpr)
-  })
-  points(l, vals, col=col, pch=16)
-  lines(l, vals, col=col)
-})
-
-###############################################################################
-# archive
-## FN rate for each lambda looking over each obs post-dist
-library(data.table)
-p <- fread("data/dataMyanmar/gparetoSim/threshold50/consecObs1/L8S2_metrics.csv")
-p[, sensor := "L8S2"]
-p <- p[!grepl("a", point)]
-
-lams <- unique(p$lambda)
-cols <- viridis::viridis(10)
-sapply(1:length(lams), function(X){
-  subDT <- p[lambda==lams[X], ]
-  fn <- sapply(1:30, function(Y){
-    colnm <- paste0("stat", Y)
-    return((sum(subDT[, get(colnm)]==0, na.rm=TRUE))/nrow(subDT))
-  })
-  
-  if(X==1){
-    plot(NULL, xlim=c(1,30), ylim=c(0,1), xlab="Observations since disturbance",
-         ylab="False Negative")
-  }
-  lines(1:30, fn, col=cols[X])
-})
