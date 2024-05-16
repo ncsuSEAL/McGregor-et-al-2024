@@ -44,6 +44,8 @@ plotRegions <- function(regionN, basePlot, regionNames, plotCrop){
   path <- "data/dataMyanmar/spatial/"
   rastImg <- rast(paste0(path, "forestMapMasked.tif"))
   
+  tiff(paste0("writings/paper1/figures/figXX_forestTypeBase.tiff"), 
+       res=350, width=18, height=14, units="cm", compression="lzw")
   if(basePlot=="forest"){
     plot(rastImg, col=rev(viridis::viridis(50)), type="classes",
          levels=c("Lowland evergreen", "Upland evergreen", 
@@ -68,6 +70,7 @@ plotRegions <- function(regionN, basePlot, regionNames, plotCrop){
     text(polySq, labels=regionNames[X], halo=TRUE, pos=3, cex=1.5, offset=1)
     return(polySq)
   })
+  dev.off()
   
   if(plotCrop){
     sapply(1:length(pol), function(X){
@@ -81,8 +84,8 @@ plotRegions <- function(regionN, basePlot, regionNames, plotCrop){
         xy <- "bottomleft"
       }
       
-      png(paste0("writings/paper1/figures/figXX_forestType", X, ".png"), 
-          res=350, width=14.7, height=10, units="cm")
+      tiff(paste0("writings/paper1/figures/figXX_forestType", X, ".tiff"), 
+          res=350, width=14.7, height=10, units="cm", compression="lzw")
       plot(crop(rastImg, pol[[X]]), 
            col=rev(c("#FFFFCC", "#CCCC66", "#006633", "#33CC00")), 
            type="classes", colNA="#333333", pax=pax,
@@ -96,7 +99,7 @@ plotRegions <- function(regionN, basePlot, regionNames, plotCrop){
   }
   return("Done yay")
 }
-plotForestType <- function(base){
+plotForestType <- function(base, figType){
   path <- "data/dataMyanmar/spatial/"
   rastImg <- rast(paste0(path, "forestMapMasked.tif"))
   
@@ -107,13 +110,25 @@ plotForestType <- function(base){
   
   rastImg <- crop(rastImg, bound)
   
-  png(paste0("writings/paper1/figures/figXX_myanmarBorder.png"), 
-      res=350, width=6, height=10, units="cm")
+  if(figType=="pub"){
+    tiff(paste0("writings/paper1/figures/figXX_myanmarBorder.tiff"), 
+        res=350, width=6, height=10, units="cm", compression="lzw")
+  } else {
+    png(paste0("writings/paper1/figures/figXX_myanmarBorder.png"), 
+        res=350, width=6, height=10, units="cm")
+  }
+  
   plot(bound)
   dev.off()
   
-  png(paste0("writings/paper1/figures/figXX_forestTypeTraining.png"), 
-      res=350, width=16, height=12, units="cm")
+  if(figType=="pub"){
+    tiff(paste0("writings/paper1/figures/figXX_forestTypeTraining.tiff"), 
+        res=350, width=16, height=12, units="cm", compression="lzw")
+  } else {
+    png(paste0("writings/paper1/figures/figXX_forestTypeTraining.png"), 
+        res=350, width=16, height=12, units="cm")
+  }
+  
   plot(rastImg, 
        col=rev(c("#FFFFCC", "#CCCC66", "#006633", "#33CC00")), 
        type="classes", 

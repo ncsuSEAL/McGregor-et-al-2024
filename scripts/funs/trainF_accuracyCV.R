@@ -32,7 +32,7 @@ runFolds <- function(i, folds, lambda, window, pointids, runType,
   }
   
   funs <- createDensFuns(dat=binaryCatTrain, stable=TRUE, monitor=TRUE, 
-                         saveFile=FALSE)
+                         saveFile=FALSE, crossVal=TRUE)
   list2env(funs, envir = .GlobalEnv)
   
   ## now generate probs for testing set
@@ -141,7 +141,8 @@ plotFPNR <- function(factorOrder, dt, lambdaPlot, obsTime){
        pch=c(rep(16, 20), rep(8, 20)), xlab="", ylab="Rate", xaxt="n", yaxt="n",
        ylim=ylim 
        )
-  text(0.075, 0.34, labels="a", cex=2)
+  text(0.05, 0.34, labels="a", cex=1.5)
+  text(0.495, 0.34, labels="FP", cex=1.5)
   axis(1, at=seq(0.2, 1, by=0.2), labels=FALSE)
   axis(2, at=seq(ylim[1], ylim[2], by=0.05), 
        labels=seq(ylim[1], ylim[2], by=0.05))
@@ -155,7 +156,8 @@ plotFPNR <- function(factorOrder, dt, lambdaPlot, obsTime){
        ylim=ylim
        # ylim=c(0.1,0.25)
        )
-  text(0.075, 0.34, labels="b", cex=2)
+  text(0.05, 0.34, labels="b", cex=1.5)
+  text(0.495, 0.34, labels="FN", cex=1.5)
   axis(1, at=seq(0.2, 1, by=0.2), labels=FALSE)
   axis(2, at=seq(ylim[1], ylim[2], by=0.05), labels=FALSE)
   
@@ -170,7 +172,7 @@ plotLagSensor <- function(X, medAll, quantLow, quantHigh, windowType, bayes){
     # col <- "#CC33FF"
       # main <- "With S1"
   }
-  col <- "#006600"
+  col <- "black"
   
   medPlot <- medAll[sensor==X, ]
   
@@ -193,19 +195,22 @@ plotLagSensor <- function(X, medAll, quantLow, quantHigh, windowType, bayes){
     par(mar=c(3,4,0,0))
     yaxt <- "s"
     ylab <- paste0("Detection Lag (", ylabAdd, ")")
-    lab <- "c"
+    lab1 <- "c"
+    lab2 <- "MO"
   } else {
     par(mar=c(3,2,0,2))
     yaxt <- "n"
     ylab <- ""
-    lab <- "d"
+    lab1 <- "d"
+    lab2 <- "MM"
   }
   
   plot(NA, NA, xlim=range(medPlot$lambda), ylim=ylim, #45 for comparison
        xlab="", main="", yaxt=yaxt, ylab=ylab)
   points(x=medPlot$lambda, y=medPlot$med, pch=17, col=col, cex=1.5)
   points(x=medPlot$lambda, y=medPlot$quant, pch=3, col=col)
-  text(0.075, ylim[2]-0.5, labels=lab, cex=2)
+  text(0.05, ylim[2]-0.5, labels=lab1, cex=1.5)
+  text(0.495, ylim[2]-0.5, labels=lab2, cex=1.5)
   title(xlab=expression(lambda), line=2, cex.lab=1.5)
   
   if(X=="All"){
@@ -308,7 +313,7 @@ plotDistSize <- function(factorOrder, dt, lambdaPlot, plotWindow){
   return(gSize)
 }
 plotF1PR <- function(dt, factorOrder, lambdaPlot, plotWindow, splitSize,
-                     windowType, plotF1, plotPR, savePNG, pngPars, plotType,
+                     windowType, plotF1, plotPR, saveFig, figPars, plotType,
                      addedTitle){
   # Calculate F1 values per lag.
   g <- rbindlist(lapply(factorOrder, f1BySensor, dt, lambdaPlot, plotWindow,
@@ -370,12 +375,12 @@ plotF1PR <- function(dt, factorOrder, lambdaPlot, plotWindow, splitSize,
       # ggtitle(paste0("F1 score", addedTitle))
     } 
     
-    if(savePNG){
-      pars <- pngPars[img=="f1", ]
-      png(paste0(imgFolder, "figXX_f1Scores_", windowType, "_", plotType, 
-                 ".png"), 
+    if(saveFig){
+      pars <- figPars[img=="f1", ]
+      tiff(paste0(imgFolder, "figXX_f1Scores_", windowType, "_", plotType, 
+                 ".tiff"), 
           width=pars$width, height=pars$height, units=pars$units, 
-          res=pars$res)
+          res=pars$res, compression="lzw")
       print(f1)
       dev.off()
     } else {
@@ -400,12 +405,12 @@ plotF1PR <- function(dt, factorOrder, lambdaPlot, plotWindow, splitSize,
       theme_grey() +
       ggtitle("PR curve")
     
-    if(savePNG){
-      pars <- pngPars[img=="pr", ]
-      png(paste0(imgFolder, "figXX_prCurve_", windowType, "_", plotType, 
-                 ".png"), 
+    if(saveFig){
+      pars <- figPars[img=="pr", ]
+      tiff(paste0(imgFolder, "figXX_prCurve_", windowType, "_", plotType, 
+                 ".tiff"), 
           width=pars$width, height=pars$height, units=pars$units, 
-          res=pars$res)
+          res=pars$res, compression="lzw")
       print(pr)
       dev.off()
     } else {
@@ -443,7 +448,7 @@ plotOtherData <- function(sens, plotTab){
 }
 plotAccuracy <- function(f, foldPath, randomLam, consecObs,
                          plotF1, plotPR, plotMeta, base, splitSize, splitNum,
-                         plotWindow, windowType, savePNG, pngPars, 
+                         plotWindow, windowType, saveFig, figPars, 
                          imgFolder, bayes, probType){
   if(bayes){
     f <- f[grepl("bayes", f)]
@@ -506,7 +511,7 @@ plotAccuracy <- function(f, foldPath, randomLam, consecObs,
   
   if(plotF1 | plotPR){
     outTab <- plotF1PR(dt, factorOrder, lambdaPlot, plotWindow, splitSize,
-                       windowType, plotF1, plotPR, savePNG, pngPars, plotType,
+                       windowType, plotF1, plotPR, saveFig, figPars, plotType,
                        addedTitle)
   } else {
     outTab <- NA
@@ -522,10 +527,11 @@ plotAccuracy <- function(f, foldPath, randomLam, consecObs,
     
     # ----------------------------------------------#
     # Plot fpr, fnr, and median lags in one figure
-    if(savePNG){
-      pars <- pngPars[img=="accLag", ]
-      png(paste0(imgFolder, "figXX_accLag_", windowType, "_", plotType, ".png"), 
-          width=pars$width, height=pars$height, units=pars$units, res=pars$res)
+    if(saveFig){
+      pars <- figPars[img=="accLag", ]
+      tiff(paste0(imgFolder, "figXX_accLag_", windowType, "_", plotType, 
+                  ".tiff"), width=pars$width, height=pars$height, 
+           units=pars$units, res=pars$res, compression="lzw")
     }
     layout(matrix(1:4, nrow=2, byrow=TRUE))
     fpnr <- plotFPNR(factorOrder, dt, lambdaPlot, obsTime)
@@ -534,29 +540,31 @@ plotAccuracy <- function(f, foldPath, randomLam, consecObs,
     
     # ----------------------------------------------#
     ## now we do boxplots of all the lag times
-    if(savePNG){
+    if(saveFig){
       dev.off()
       
-      pars <- pngPars[img=="boxLag", ]
-      png(paste0(imgFolder, "figXX_boxLag_", windowType, "_", plotType, ".png"), 
-          width=pars$width, height=pars$height, units=pars$units, res=pars$res)
+      pars <- figPars[img=="boxLag", ]
+      tiff(paste0(imgFolder, "figXX_boxLag_", windowType, "_", plotType, 
+                  ".tiff"),  width=pars$width, height=pars$height, 
+           units=pars$units, res=pars$res, compression="lzw")
     }
     layout(matrix(1:2, nrow=1))
     plotAllLags(bayes, windowType, lags=lagData$lags)
     
-    if(savePNG) dev.off()
+    if(saveFig) dev.off()
 
     # ----------------------------------------------#
     ## accuracy by size class
     ### percDistL8=1 means >= 100% Landsat pixel
     if(!splitSize){
-      pars <- pngPars[img=="f1Size", ]
-      if(savePNG){
-        png(paste0(imgFolder, "figXX_f1Size", "_", plotType, ".png"), 
-            width=pars$width, height=pars$height, units=pars$units, res=pars$res)
+      pars <- figPars[img=="f1Size", ]
+      if(saveFig){
+        tiff(paste0(imgFolder, "figXX_f1Size", "_", plotType, ".tiff"), 
+            width=pars$width, height=pars$height, units=pars$units, 
+            res=pars$res, compression="lzw")
       }
       gSize <- plotDistSize(factorOrder, dt, lambdaPlot, plotWindow)
-      if(savePNG) dev.off()
+      if(saveFig) dev.off()
     } else {
       gSize <- NA
     }
@@ -601,34 +609,6 @@ plotAccuracy <- function(f, foldPath, randomLam, consecObs,
   #      col=c("red", "purple"), pch=16, bty="n")
 }
 
-# Plot logistic model statistics
-plotLogModStats <- function(f){
-  winds <- sapply(f, function(st) return(strsplit(st, "Stats")[[1]][2]))
-  winds <- gsub(".csv", "", winds)
-  dt <- rbindlist(lapply(1:3, function(X) return(fread(f[X]))))
-  dt[, `:=` (col = ifelse(sens==2, "blue", "purple"),
-             pch = ifelse(window==30, 2, ifelse(window==60, 5, 8)))]
-  
-  layout(matrix(1:4, ncol=2))
-  sapply(1:3, function(X){
-    if(X==1) var <- "aic" else if(X==2) var <- "rmse" else var <- "r2"
-    
-    ##DOUBLE CHECK BEFORE USING PLOT FOR SOMETHING
-    if(X==1) main <- "NDVI" else main <- "" 
-    
-    plot(dt$lambda, dt[, get(var)], pch=dt$pch, col=dt$col, xlab="Lambda", 
-         ylab=toupper(var), main=main)
-    if(X==3){
-      legend("bottomright", 
-             legend=c(winds, "L8S2", "All"),
-             pch=c(2,5,8,NA,NA), lty=c(NA, NA, NA, 1, 1), 
-             col=c("black", "black", "black", "blue", "purple"),
-             bty="n")
-    }
-  })
-  layout(matrix(1:1))
-}
-
 # Distribution of lag times
 plotLag <- function(fDates, fMetrics, l, sensorCombo, foldPath, window, 
                     windowType, obs, plotBox, plotECDF){
@@ -646,7 +626,7 @@ plotLag <- function(fDates, fMetrics, l, sensorCombo, foldPath, window,
   })
   
   dtMet <- dtList[[1]]
-  dtMet <- dtMet[lambda==l, ]
+  dtMet <- dtMet[as.character(lambda)==as.character(l), ]
   rangeMet <- max(dtMet$lagSlow, dtMet$lagFast, na.rm=TRUE)
   
   ## change NAs to be 70 in order to have the true % be represented on the ecdf
@@ -691,11 +671,10 @@ plotLag <- function(fDates, fMetrics, l, sensorCombo, foldPath, window,
       nm <- "MM"
     }
     
-    col <- "#383aaa"
     plot(ecdf(dtMet$lagFast), main=paste0(nm, ": nObs =", obs), 
-         xlim=xlim, ylim=c(0,1), verticals=TRUE, col=col, pch=NA, lwd=2,
+         xlim=xlim, ylim=c(0,1), verticals=TRUE, col="#383aaa", pch=NA, lwd=2,
          xlab="", yaxt=yaxt, ylab="", col.01line="transparent")
-    lines(ecdf(dtMet$lagSlow), col=col, verticals=TRUE, pch=NA, lwd=2, lty=3,
+    lines(ecdf(dtMet$lagSlow), col="#66CCFF", verticals=TRUE, pch=NA,
           col.01line="transparent")
     title(xlab=xlab, line=2)
     abline(h=0.5, lty=2)
@@ -706,7 +685,8 @@ plotLag <- function(fDates, fMetrics, l, sensorCombo, foldPath, window,
       title(ylab=ylab1, line=2)
     } else if(obs==3){
       axis(2, at=seq(0, 1, 0.2), labels=rep("", 6))
-      legend("bottomright", col=col, bty="n", lty=c(1,3), lwd=2, cex=0.8,
+      legend("bottomright", col=c("#383aaa", "#66CCFF"), bty="n", lwd=c(2,1), 
+             cex=0.8,
              legend=c("Fastest detection", "Slowest detection"))
     }
   }
@@ -820,106 +800,3 @@ avgDaysPerObs <- function(datesFiles, backfill=FALSE, window, type){
   
   return(out)
 }
-
-################################################################################
-
-
-## archive
-# calcErrorCV <- function(i){
-#   # The formula for the overall cross-val error is the following. We are using
-#   ## the binary for this.
-#   # This is from https://statology.org/k-fold-cross-validation/
-#   # n = total number of observations used
-#   # yi = observed value of observation i
-#   # ki = predicted value of observation i
-#   ## (1/n) * SUM ((yi - ki)^2)
-#   
-#   # Run for each iteration
-#   iterDT <- comp[iter==i, ]
-#   
-#   # Basic squared error (observed minus predicted)
-#   err <- function(run, obs, pred) return((obs - pred)^2)
-#   
-#   bleh <- iterDT
-#   iterDT <- iterDT[!grepl("a", point), ]
-#   fpDT <- iterDT[grepl("a", point), ]
-#   
-#   # Get the values for each point in the iteration
-#   errIter <- sapply(1:nrow(iterDT), function(pt, iterDT, fpDT){
-#     distDT <- iterDT[pt, ]
-#     distDTno <- fpDT[pt, ]
-#     
-#     ## Number of disturbance observations
-#     nDistObs <- sum(!is.na(distDT[, ..colN]))
-#     tpAll <- sum(distDT[, ..colN], na.rm=TRUE)
-#     
-#     
-#     
-#     
-#     ## We subtract the number of TN from the number of stable obs, which gives
-#     ## us the number of FP
-#     #Both of these if statements are saying to calculate the sum if we have
-#     ## false positives or false negatives, otherwise the sum is 0 for true obs
-#     if((sm$nStableObs - sm$tn) > 0){
-#       errStable <- sum(sapply(1:(sm$nStableObs - sm$tn), err, obs=0, pred=1))
-#     } else {
-#       errStable <- 0
-#     }
-#     
-#     if((nDistObs - tpAll) > 0){
-#       
-#       # Note here we are accounting for each point's differing numbers of 
-#       ## disturbance observations (non-backfilled data)
-#       errDist <- sum(sapply(1:(nDistObs - tpAll), err, obs=1, pred=0))
-#     } else {
-#       errDist <- 0
-#     }
-#     
-#     return(c(sum(errStable, errDist), nDistObs))
-#   })
-#   
-#   out <- sum(errIter[1, ]) / sum(errIter[2, ], iterDT$nStableObs)
-#   return(out)
-# }
-
-
-## Dark mode for AGU abstract
-# g <- g[, .SD[1:10], by=.(sensor, lambda)] #subset to keep only the first 10
-# g1 <- g[, type := "ASAP"]
-# g3 <- g[, type := "Conservative"] # do the same thing but with consecObs=3
-# g <- rbind(g1, g3)
-# 
-# g <- g[sensor=="L8S2"][order(lambda), ][, x := rep(c(1:10, 3:12), 3)]
-# 
-# f1 <- ggplot(g) +
-#   # aes(x=rep(rep(1:10, lambdaN), 3), y=f1) +
-#   aes(x=x, y=f1) +
-#   geom_line(aes(color=as.character(lambda), linetype=type), size=1) +
-#   scale_color_manual(values=colLine, name="Lambda") +
-#   scale_x_continuous(breaks = function(x){
-#     unique(floor(pretty(seq(0, (max(x) + 1) * 1.1))))}) +
-#   labs(linetype="Detection mode") +
-#   xlab(xlab) +
-#   ylab("F1 score") +
-#   # ylim(0,1) +
-#   # facet_wrap(~sensor) +
-#   dark_theme_gray() +
-#   # theme_minimal() +
-#   theme(axis.text=element_text(size=12)) +
-#   ggtitle("F1 score by observation")
-
-# meanDays <- meanDays[order(sensor, decreasing=TRUE)]
-# days <- c(rep(meanDays$meanTime[1:10], 3), rep(meanDays$meanTime[11:20], 3), 
-#           rep(meanDays$meanTime[21:30], 3))
-# g[, days := days]
-# ggplot(g) +
-#   aes(x=days, y=f1) +
-#   geom_line(aes(color=as.character(lambda)), size=1) +
-#   scale_color_manual(values=col, name="Lambda") +
-#   xlab("Days since disturbance") +
-#   ylab("F1 score") +
-#   ylim(0,1) +
-#   facet_wrap(~sensor) +
-#   dark_theme_gray() +
-#   # theme_minimal() +
-#   ggtitle("F1 score by day")

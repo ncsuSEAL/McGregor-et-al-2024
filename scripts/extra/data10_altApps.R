@@ -86,10 +86,12 @@ sapply(appLocations, buffExtent)
 library(data.table)
 library(terra)
 # Step 4: Plot northern myanmar with forest type and training data
+## Fig 1 in paper1
 base <- fread("data/dataMyanmar/trainingPars/trainingDataPoints.csv")
-plotForestType(base)
+plotForestType(base, figType="pub")
 
 # step 5: Plot northern myanmar with forest type and app regions outlined
+## Fig 3 in paper1 and fig 1 in paper2
 load("data/dataMyanmar/appLocations.Rdata")
 # nm <- paste0("Region", 1:5)
 nm <- c("Region 1", NA, NA, NA, "Region 2")

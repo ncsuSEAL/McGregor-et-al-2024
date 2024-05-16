@@ -14,7 +14,7 @@
 ## System: R Version 4.1.1, April 2023
 ## Last modified: Apr 2023
 ##########################################################
-library(data.table)
+groundhog.library(data.table, groundhogDate)
 library(parallel)
 source("scripts/funs/trainD_metricsPrep.R")
 
@@ -23,26 +23,54 @@ combos <- c("sentinel1", "landsat8, sentinel2",
             "landsat8, sentinel2, sentinel1")
 fileNames <- c("S1", "L8S2", "All")
 sensKeep <- combos[2] # doesn't matter, both L8S2 and All are run below
-bayes <- FALSE
+bayes <- FALSE # only for chapter 2
 source("scripts/args.R")
 source("scripts/argsTrain.R", local=TRUE)
 consecObs <- 1
 filePath <- "/trainingPars/train4_fullZewmaProbs/train4_S_N.csv"
 saveFile <- paste0(dataPath, filePath)
-
 folderPath <- paste0(dataPath, "/trainingPars/train5_allMetrics")
 if(!dir.exists(folderPath)) dir.create(folderPath)
 fileOutSave <- paste0(folderPath, "/",
-                      "train5_normal_allMetrics_conObs", consecObs, "_", 
+                      "train5_normal_allMetrics_conObs", consecObs, "_",
                       windowType,".csv")
 ##---------------
 # Ch 1
-## all lambdas, all points, both sensors, single threshold = 129 s (par pts)
-runAll(threshSeq=NULL, base, dates, probThresh=0.5, window, windowType, bayes, 
-       saveFile, pointids, consecObs, dataPath, fileOutSave)
+if(runAllThresholds){
+       ## all lambdas, all points, both sensors, all thresholds
+       ### parallel points
+       threshSeq <- seq(0.1, 1, by=0.1)
+       runAll(threshSeq, base, dates, probThresh, window, windowType, bayes, 
+              saveFile, pointids, consecObs, dataPath, fileOutSave)
+} else {
+       ## all lambdas, all points, both sensors, single threshold
+       
+       for(obsNumber in c(1,3)){
+              print(paste0("Running for ", obsNumber, 
+                            " consecutive observation(s)"))
+              runAll(threshSeq=NULL, base, dates, probThresh=0.5, window, 
+                     windowType, bayes, saveFile, pointids, consecObs=1, 
+                     dataPath, fileOutSave)
+       }
+}
+##---------------
+if(makePlots){
+       ## Plot of median lags (lagFast) comparing All to L8S2
+       fileLoad <- gsub("Metrics_", "MetricsThresholds_", fileOutSave)
+       if(bayes) fileLoad <- gsub("normal", "bayes", fileLoad)
+       test <- fread(fileLoad)
+       bl <- test[, median(lagFast, na.rm=TRUE), by=.(thresh, sensor, lambda)]
+       blSlow <- test[, median(lagSlow, na.rm=TRUE), by=.(thresh, sensor, lambda)]
 
-## all lambdas, all points, both sensors, all thresholds = 1283 s
-### parallel points
-threshSeq <- seq(0.1, 1, by=0.1)
-runAll(threshSeq, base, dates, probThresh, window, windowType, bayes, 
-       saveFile, pointids, consecObs, dataPath, fileOutSave)
+       library(ggplot2)
+       bl[, thresh := as.character(thresh)]
+       blSlow[, thresh := as.character(thresh)]
+       ggplot(bl, aes(x=lambda, y=V1, group=thresh)) +
+       geom_path(aes(color=thresh)) +
+       geom_path(data=blSlow, aes(x=lambda, y=V1, group=thresh, color=thresh), 
+              linetype="dotted") +
+       # scale_color_manual(values=viridis::magma(11)) +
+       ylab("Median lag (days)") +
+       facet_wrap(~sensor)
+}
+

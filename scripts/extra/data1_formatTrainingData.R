@@ -64,10 +64,38 @@ formatData <- function(dataPath){
 
 # Format data, then write out to new csv
 full <- formatData("data/dataMyanmar/trainingDataPointsNew.csv")
-fwrite(full, "data/dataMyanmar/trainingDataPoints.csv")
+fwrite(full, "data/dataMyanmar/trainingPars/trainingDataPoints.csv")
 
 ## quick plot of training point stats
 layout(matrix(1:4, nrow=2))
 hist(full$distPercS2, main="% Dist S2")
 hist(full$distPercL8, main="% Dist L8")
 hist(full$dayDiff, main="Temporal res dist", breaks=30)
+
+## distance between each pair
+library(terra)
+base <- fread("data/dataMyanmar/trainingPars/trainingDataPoints.csv")
+
+vects <- lapply(1:2, function(i){
+  if(i==1){
+    dt <- base[!grepl("a", pointid)]
+  } else {
+    dt <- base[grepl("a", pointid)]
+  }
+  
+  dt <- dt[, .(coordX, coordY, pointid)]
+  dt <- dt[order(gsub("a", "", pointid))]
+  
+  v <- vect(dt, geom=c("coordX", "coordY"), crs="EPSG:4326")
+  return(v)
+})
+
+pairDist <- distance(vects[[1]], vects[[2]], pairwise=TRUE)
+boxplot(pairDist)
+
+dt <- base[!grepl("a", pointid),][order(pointid)]
+distTab <- data.table(pointid=paste0(dt$pointid, "a"), pairDist=pairDist)
+distTab <- rbind(distTab, data.table(pointid=dt$pointid, pairDist=0))
+fwrite(distTab, "data/dataMyanmar/trainingPars/trainingDataDistances.csv")
+
+

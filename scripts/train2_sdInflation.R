@@ -11,11 +11,17 @@
 ## System: R Version 4.1.1, October 2022
 ## Last modified: October 2022
 ##########################################################
-library(data.table)
+groundhog.library(data.table, groundhogDate)
 source("scripts/funs/trainB_inflation.R")
 
 ## main functions
-runInflation <- function(nRun, plotSeasons, plotInflation, calcFactor){
+# in `inflationFactor()`, the arguments mean
+## ndvi = TRUE only used for plotting figures
+## resDates = TRUE & variance = FALSE to calculate training dynamic inflation
+## resDates = FALSE & variance = TRUE to calculate landscape static inflation
+
+runInflation <- function(nRun, plotSeasons, plotInflation, calcFactor, 
+                         timeframe){
   variance <- FALSE
   resDates <- FALSE
   ndvi <- FALSE
@@ -42,20 +48,16 @@ runInflation <- function(nRun, plotSeasons, plotInflation, calcFactor){
   load(paste0(fileSaveLoc, ".Rdata"))
   
   ## Now run the internal functions
-  resVec <- lapply(c("stable", "monitor"), function(tf){
-    inflationFactor(oneTS, variance, resDates, ndvi, sensVec=nRun, windowVec,
-                    timeframe=tf, returnData, dates=dates)
-  })
+  resVec <- inflationFactor(oneTS, variance, resDates, ndvi, sensVec=nRun, 
+                            windowVec, timeframe, returnData, dates=dates)
   
   if(plotInflation){
-    ## item list: 1=original res, 2=doy, 3=std, or inflation factor
-    names(resVec) <- c("stable", "monitor")
-    inflation <- resVec$stable[[3]]
-    return(inflation)
+    # items are 
+    ## 1 = original residuals
+    ## 2 = doy
+    ## 3 = inflation factor
+    return(resVec)
   } else {
-    if(calcFactor){
-      print("Please update `args.R` with the mean combined inflation factor")
-    }
     return(print("Done"))
   }
 }
@@ -63,40 +65,47 @@ makePlots <- function(plotSeasons=FALSE, plotInflation=FALSE, calcFactor=FALSE){
   if(plotSeasons) fileAdd <- "seasonality"
   if(plotInflation) fileAdd <- "residualVec"
   
-  png(paste0("figures/figXX_", fileAdd, ".png"), 
-      width=20, height=14, units="cm", res=350)
-  layout(matrix(1:4, nrow=2))
-  sapply(c(2,3), runInflation, plotSeasons, plotInflation, calcFactor=FALSE)
+  tiff(paste0("figures/figXX_", fileAdd, ".tiff"), 
+      width=22, height=14, units="cm", res=350, compression="lzw")
+  
+  if(plotSeasons) layout(matrix(1:6, nrow=2, byrow=TRUE))
+  if(plotInflation) layout(matrix(1:4, nrow=2, byrow=TRUE))
+  sapply(c("stable", "monitor"), function(tf){
+    sapply(c(2,3), runInflation, plotSeasons, plotInflation, calcFactor=FALSE,
+           timeframe=tf)
+  })
+  
   dev.off()
 }
 
-# 0. Make plots showing seasonal variation for both NDVI and backscatter, and
-## seasonal variation in the residuals
-makePlots(plotSeasons=TRUE)
-makePlots(plotInflation=TRUE)
-
 ##----------------------------------------------------------------------------##
 # 1. Get seasonal variation in residuals for dynamic inflation factor by doy
-## NOTE: this function uses the original residuals and ts models for NDVI plot
+## NOTE 1: this uses output from train1 with inflationType="static"
+## NOTE 2: this function uses the original residuals and ts models for NDVI plot
 ## visualization. Otherwise, the seasonal inflation adjustment (by doy) AND the
 ## monitoring inflation factor are based on the aggregated residuals 
 ## (standardized and twice-spike filtered)
 
+## plot seasonality or inflation vector
+# makePlots(plotSeasons=TRUE)
+# makePlots(plotInflation=TRUE)
+
 ## calculate inflation factor for dynamic inflation (ignore plots here)
 ### as a reminder, this is only calculated from stable period for this iteration
-out <- sapply(c(2,3), runInflation, plotSeasons=FALSE, plotInflation=TRUE,
-              calcFactor=FALSE)
-out <- as.data.table(out)
-colnames(out) <- c("L8S2", "All")
+### correct params are calcFactor=FALSE and timeframe="stable"
+if(inflationType=="static"){
+  out <- lapply(c(2,3), runInflation, plotSeasons=FALSE, plotInflation=TRUE,
+              calcFactor=FALSE, timeframe="stable")
+  out <- data.table("L8S2" = out[[1]][[3]], "All" = out[[2]][[3]])
 
-## save the stable period dynamic inflation factors
-sapply(colnames(out), function(X){
-  vec <- out[, get(X)]
-  save(vec, file=
-         paste0("data/trainingPars/train2_seasonalAdjustment", X, 
-                ".Rdata"))
-  return(print("Saved"))
-})
+  ## save the stable period dynamic inflation factors
+  sapply(colnames(out), function(X){
+    vec <- out[, get(X)]
+    save(vec, file=
+          paste0("data/trainingPars/train2_seasonalAdjustment", X, ".Rdata"))
+    return(print("Saved"))
+  })
+}
 
 ##----------------------------------------------------------------------------##
 # 2. Get static inflation factor based on increased variance in 
@@ -106,7 +115,20 @@ sapply(colnames(out), function(X){
 ## inflationType set.
 
 ## STOP. HAVE YOU RUN SCRIPT 1 WITH dynamic INFLATION YET?
-runInflation(nRun=2, plotSeasons=FALSE, plotInflation=FALSE, calcFactor=TRUE)
+## correct parameters are nRun=2, calcFactor=TRUE, other arguments FALSE, 
+## timeframe="monitor"
+if(inflationType=="dynamic"){
+  runInflation(nRun=2, plotSeasons=FALSE, plotInflation=FALSE, calcFactor=TRUE,
+             timeframe="monitor")
+}
 
+##----------------------------------------------------------------------------##
+## archive: try different windows
+# layout(matrix(1:4, ncol=2, byrow=TRUE))
+# inflationFactor(nodist, variance=FALSE, resDates=TRUE, ndvi=FALSE,
+#                 sensVec=c(1:3), windowVec=c(15,30,45,60), timeframe="monitor",
+#                 returnData=TRUE, dates=dates)
 
-
+# layout(matrix(1:4, ncol=2))
+# inflationFactor(nodist, variance=FALSE, resDates=FALSE, ndvi=TRUE,
+#                 sensVec=c(1:3), timeframe="monitor", returnData=TRUE, dates=dates)
