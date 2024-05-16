@@ -1,9 +1,9 @@
 # Workflow steps with corresponding script names and locations
 
 ## Description
-This is the same workflow as in the flowchart I've created but the associated scripts are included along with their general location. Each section's steps are in order.
+Each section's steps are in order.
 
-Medium = Mac, PC, Either, or HPC
+Medium = Mac, PC, Either, or HPC (high powered computer)
 - "Either" refers to either Mac or PC
 
 Figure # | Script
