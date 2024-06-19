@@ -1,6 +1,13 @@
 # A multi-source change detection algorithm supporting user customization and near real-time deforestation detections
 This repository contains the scripts and workflow used for [McGregor et al. 2024](https://www.sciencedirect.com/science/article/pii/S003442572400213X?via%3Dihub). I have verified that the initial analysis runs without issue, and the landscape analysis *should* run similarly, but that has not been tested (or altered) since ~spring 2023. Please feel free to open an issue if something pops up.
 
+*Clarification and fixes in manuscript*:
+- At the end of Section 2.1.2 (and just above Equation 3), we did not fully describe how the function `f` in the equation converts the zEWMA values (`Z_ct`) into a probability. There should be another sentence that reads:
+  - "Probability conversion relies on the function `f`, which characterized the distribution of zEWMA values for the given condition. In other words, the calculated probability is the probability that a given zEWMA value fell within a specified distribution."
+- At the beginning of the Discussion, the text should say the findings are summarized in **two** points, not three.
+
+Thanks to Zhenbang Wu and Xiaojie Gao for bringing these to our attention.
+
 ## Analysis
 The step-by-step workflow for how the scripts should be run is in `workflow.md`. There are 2 steps to the analysis:
 - The initial analysis with sample points (focal locations) covers the bulk of the paper and can be run via the script `train0_prepRunCode.R`.
