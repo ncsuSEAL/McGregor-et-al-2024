@@ -3,7 +3,8 @@ This repository contains the scripts and workflow used for [McGregor et al. 2024
 
 *Clarification and fixes in manuscript*:
 - At the end of Section 2.1.2 (and just above Equation 3), we did not fully describe how the function `f` in the equation converts the zEWMA values (`Z_ct`) into a probability. There should be another sentence that reads:
-  - "Probability conversion relies on the function `f`, which characterized the distribution of zEWMA values for the given condition. In other words, the calculated probability is the probability that a given zEWMA value fell within a specified distribution."
+  - "Probability conversion relies on the function `f`, which characterized the distribution of zEWMA values across all locations for the given condition. In other words, the calculated probability is the probability that a given zEWMA value fell within a specified distribution. For example, `f(Z|D=1)` is the distribution of all dLoc zEWMA values from the date of disturbance to 60 days post-disturbance. Meanwhile, `f(Z|D=0)` includes the zEWMA values of all locations (uLocs + dLocs) in the stable period plus the uLoc monitoring period (disturbance to 60 days post-disturbance)."
+- The first paragraph of Section 2.3 (landscape demonstration) should have a sentence at the end that reads: "Each sensor's data was resampled to 10 m resolution prior to running the algorithm."
 - At the beginning of the Discussion, the text should say the findings are summarized in **two** points, not three.
 
 Thanks to Zhenbang Wu and Xiaojie Gao for bringing these to our attention.
